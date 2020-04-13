@@ -21,10 +21,10 @@ public class CheckersTest {
 
         @Test
         public void should_initialize_with_pieces_from_constructor() {
-            int[] board = new int[]{3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            Checkers checkers = new Checkers(board);
+            int[] b = buildState(row(1, 0, 0, 0));
+            Checkers checkers = new Checkers(b);
 
-            assertArrayEquals(checkers.stateSlice(), board);
+            assertArrayEquals(checkers.stateSlice(), b);
         }
     }
 
@@ -73,8 +73,12 @@ public class CheckersTest {
 
             @BeforeEach
             void setUp() {
-                int[] board = pad(new int[]{3, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0});
-                checkers = new Checkers(board);
+                int[] b = buildState(
+                        row(0, 0, 0, 0),
+                        row(1, 0, 0, 1),
+                        row(0, 0, 0, 0)
+                );
+                checkers = new Checkers(b);
             }
 
             @Test
@@ -100,8 +104,10 @@ public class CheckersTest {
 
             @BeforeEach
             void setUp() {
-                int[] board = new int[]{3, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-                checkers = new Checkers(board);
+                int[] b = buildState(
+                        row(1, 0, 0, 1),
+                        row(0, 0, 0, 0));
+                checkers = new Checkers(b);
             }
 
             @Test
@@ -195,8 +201,11 @@ public class CheckersTest {
 
             @BeforeEach
             void setUp() {
-                int[] simpleBoard = {3, 1, 1, 1, 1, 0, -1, 0, 0, 0, 0, 0, 0};
-                Checkers checkers = new Checkers(simpleBoard);
+                int[] b = buildState(
+                        row(1, 1, 1, 1),
+                        row(0, -1, 0, 0));
+
+                Checkers checkers = new Checkers(b);
                 legalMoves = checkers.getAllLegalMoves();
             }
 
@@ -218,8 +227,12 @@ public class CheckersTest {
 
         @BeforeEach
         void setUp() {
-            checkers = new Checkers();
-            checkers.setup();
+            int[] b = buildState(
+                    row(1, 0, 0, 0),
+                    row(0, 0, 0, 0),
+                    row(0, 0, 0, -1)
+            );
+            checkers = new Checkers(b);
         }
 
         @Test
@@ -229,27 +242,32 @@ public class CheckersTest {
 
         @Test
         void should_throw_error_if_wrong_turn() {
-            assertThrows(IllegalArgumentException.class, () -> checkers.move(21, 17));
+            assertThrows(IllegalArgumentException.class, () -> checkers.move(12, 8));
         }
 
         @Test
         void should_move_player_one_piece() {
-            checkers.move(9, 13);
+            int[] expectedState = buildState(
+                    row(0, 0, 0, 0),
+                    row(1, 0, 0, 0),
+                    row(0, 0, 0, -1)
+            );
 
-            int[] expectedState = getAfterSetupState();
-            swap(expectedState, 9, 13);
+            checkers.move(1, 5);
 
             assertArrayEquals(checkers.stateSlice(), expectedState);
         }
 
         @Test
         void should_move_player_two_piece() {
-            checkers.move(9, 13);
-            checkers.move(21, 17);
+            int[] expectedState = buildState(
+                    row(0, 0, 0, 0),
+                    row(1, 0, 0, -1),
+                    row(0, 0, 0, 0)
+            );
 
-            int[] expectedState = getAfterSetupState();
-            swap(expectedState, 9, 13);
-            swap(expectedState, 21, 17);
+            checkers.move(1, 5);
+            checkers.move(12, 8);
 
             assertArrayEquals(checkers.stateSlice(), expectedState);
         }
@@ -310,17 +328,20 @@ public class CheckersTest {
     }
 
     private int[] pad(int[] board) {
-        return Arrays.copyOf(board, 32);
-    }
-
-    private void swap(int[] state, int origin, int target) {
-        int temp = state[origin];
-        state[origin] = state[target];
-        state[target] = temp;
+        return Arrays.copyOf(board, 33);
     }
 
     private int[] getAfterSetupState() {
-        return new int[]{3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+        return buildState(
+                row(1, 1, 1, 1),
+                row(1, 1, 1, 1),
+                row(1, 1, 1, 1),
+                row(0, 0, 0, 0),
+                row(0, 0, 0, 0),
+                row(-1, -1, -1, -1),
+                row(-1, -1, -1, -1),
+                row(-1, -1, -1, -1)
+        );
     }
 
     private Matcher<Move> matchingMove(int origin, int target) {
