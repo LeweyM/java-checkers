@@ -167,7 +167,7 @@ public class CheckersTest {
         void should_get_all_player_one_legal_moves() {
             List<Move> moves = checkers.getAllLegalMoves();
 
-            assertEquals(moves.size(), 7);
+            assertEquals(7, moves.size());
             assertThat(moves, hasItem(matchingMove(9, 13)));
             assertThat(moves, hasItem(matchingMove(9, 14)));
             assertThat(moves, hasItem(matchingMove(10, 14)));
