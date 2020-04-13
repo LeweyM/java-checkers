@@ -2,11 +2,15 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class CheckersTest {
@@ -15,17 +19,13 @@ public class CheckersTest {
     @DisplayName("From board Constructor")
     class FromBoardConstructor {
 
-
         @Test
         public void should_initialize_with_pieces_from_constructor() {
-            int[] board = new int[]{1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
+            int[] board = new int[]{3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
             Checkers checkers = new Checkers(board);
 
-            String expectedState = "[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]";
-            assertEquals(checkers.toString(), expectedState);
+            assertArrayEquals(checkers.stateSlice(), board);
         }
-
-
     }
 
     @Nested
@@ -37,8 +37,7 @@ public class CheckersTest {
             Checkers checkers = new Checkers();
             checkers.setup();
 
-            String expectedState = "[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]";
-            assertEquals(checkers.toString(), expectedState);
+            assertArrayEquals(checkers.stateSlice(), getAfterSetupState());
         }
 
     }
@@ -66,7 +65,7 @@ public class CheckersTest {
 
             assertEquals(0, legalMoves.size());
         }
-        
+
         @Nested
         @DisplayName("when on an odd row")
         class OddRow {
@@ -74,7 +73,7 @@ public class CheckersTest {
 
             @BeforeEach
             void setUp() {
-                int[] board = new int[]{0,0,0,0, 1,0,0,1, 0,0,0,0};
+                int[] board = pad(new int[]{3, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0});
                 checkers = new Checkers(board);
             }
 
@@ -89,8 +88,8 @@ public class CheckersTest {
             void should_get_two_legal_moves_for_right_edge_piece() {
                 List<Move> legalMoves = checkers.getLegalMoves(8);
                 assertEquals(legalMoves.size(), 2);
-                assertThat(legalMoves, hasItem(matchingMove(8, 11)));
                 assertThat(legalMoves, hasItem(matchingMove(8, 12)));
+                assertThat(legalMoves, hasItem(matchingMove(8, 11)));
             }
         }
 
@@ -101,7 +100,7 @@ public class CheckersTest {
 
             @BeforeEach
             void setUp() {
-                int[] board = new int[]{1,0,0,1, 0,0,0,0, 0,0,0,0};
+                int[] board = new int[]{3, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
                 checkers = new Checkers(board);
             }
 
@@ -122,11 +121,34 @@ public class CheckersTest {
                 assertThat(legalMoves, hasItem(matchingMove(4, 8)));
             }
         }
+
+        @Nested
+        @DisplayName("When takes are available")
+        class Takes {
+            private List<Move> legalMoves;
+
+            @BeforeEach
+            void setUp() {
+                int[] b = buildState(
+                        row(1, 1, 1, 1),
+                        row(0, -1, 0, 0),
+                        row(0, 0, 0, 0));
+                Checkers checkers = new Checkers(b);
+                legalMoves = checkers.getLegalMoves(1);
+            }
+
+            @Test
+            void should_only_return_available_takes() {
+                assertEquals(1, legalMoves.size());
+                assertThat(legalMoves, hasItem(matchingMove(1, 10)));
+            }
+        }
     }
 
     @Nested
     @DisplayName("getAllLegalMoves")
     class getAllLegalMoves {
+
         private Checkers checkers;
 
         @BeforeEach
@@ -137,7 +159,7 @@ public class CheckersTest {
 
         @Test
         void should_get_all_player_one_legal_moves() {
-            List<Move> moves = checkers.getAllLegalMoves(1);
+            List<Move> moves = checkers.getAllLegalMoves();
 
             assertEquals(moves.size(), 7);
             assertThat(moves, hasItem(matchingMove(9, 13)));
@@ -151,7 +173,9 @@ public class CheckersTest {
 
         @Test
         void should_get_all_player_two_legal_moves() {
-            List<Move> moves = checkers.getAllLegalMoves(2);
+            checkers.move(9, 13);
+
+            List<Move> moves = checkers.getAllLegalMoves();
 
             assertEquals(moves.size(), 7);
             assertThat(moves, hasItem(matchingMove(21, 17)));
@@ -162,9 +186,142 @@ public class CheckersTest {
             assertThat(moves, hasItem(matchingMove(24, 19)));
             assertThat(moves, hasItem(matchingMove(24, 20)));
         }
+
+        @Nested
+        @DisplayName("When takes are available")
+        class Takes {
+
+            private List<Move> legalMoves;
+
+            @BeforeEach
+            void setUp() {
+                int[] simpleBoard = {3, 1, 1, 1, 1, 0, -1, 0, 0, 0, 0, 0, 0};
+                Checkers checkers = new Checkers(simpleBoard);
+                legalMoves = checkers.getAllLegalMoves();
+            }
+
+            @Test
+            void should_only_return_available_takes() {
+                assertThat(legalMoves, hasItem(matchingMove(1, 10)));
+                assertThat(legalMoves, hasItem(matchingMove(2, 9)));
+                assertEquals(2, legalMoves.size());
+            }
+
+        }
     }
 
+    @Nested
+    @DisplayName("move")
+    class move {
 
+        private Checkers checkers;
+
+        @BeforeEach
+        void setUp() {
+            checkers = new Checkers();
+            checkers.setup();
+        }
+
+        @Test
+        void should_throw_exception_for_invalid_move() {
+            assertThrows(IllegalArgumentException.class, () -> checkers.move(1, 30));
+        }
+
+        @Test
+        void should_throw_error_if_wrong_turn() {
+            assertThrows(IllegalArgumentException.class, () -> checkers.move(21, 17));
+        }
+
+        @Test
+        void should_move_player_one_piece() {
+            checkers.move(9, 13);
+
+            int[] expectedState = getAfterSetupState();
+            swap(expectedState, 9, 13);
+
+            assertArrayEquals(checkers.stateSlice(), expectedState);
+        }
+
+        @Test
+        void should_move_player_two_piece() {
+            checkers.move(9, 13);
+            checkers.move(21, 17);
+
+            int[] expectedState = getAfterSetupState();
+            swap(expectedState, 9, 13);
+            swap(expectedState, 21, 17);
+
+            assertArrayEquals(checkers.stateSlice(), expectedState);
+        }
+
+        @Nested
+        @DisplayName("taking pieces")
+        class ForcedMoves {
+
+            private Checkers checkers;
+
+            @Nested
+            @DisplayName("When only one forced move is available after a player moves")
+            class ForcedAfterMove {
+
+                @BeforeEach
+                void setUp() {
+                    int[] b = buildState(
+                            row(1, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, -1, 0, 0)
+                    );
+                    checkers = new Checkers(b);
+                    checkers.move(1, 6);
+                }
+
+                @Test
+                void the_other_player_must_take() {
+                    int[] expectedState = buildState(
+                            row(-1, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0)
+                    );
+
+                    assertArrayEquals(expectedState, checkers.stateSlice());
+                }
+
+                @Test
+                void should_go_back_to_other_players_turn() {
+                    assertThrows(IllegalArgumentException.class, () -> {
+                        checkers.move(12, 16);
+                    });
+                }
+
+            }
+        }
+    }
+
+    private int[] row(int... cells) {
+        return cells;
+    }
+
+    private int[] buildState(int[]... rows) {
+        ArrayList<int[]> rowList = new ArrayList<>(Arrays.asList(rows));
+        rowList.add(0, new int[]{3});
+        return pad(rowList.stream()
+                .flatMapToInt(IntStream::of)
+                .toArray());
+    }
+
+    private int[] pad(int[] board) {
+        return Arrays.copyOf(board, 32);
+    }
+
+    private void swap(int[] state, int origin, int target) {
+        int temp = state[origin];
+        state[origin] = state[target];
+        state[target] = temp;
+    }
+
+    private int[] getAfterSetupState() {
+        return new int[]{3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+    }
 
     private Matcher<Move> matchingMove(int origin, int target) {
         return new TypeSafeMatcher<Move>() {
@@ -176,7 +333,7 @@ public class CheckersTest {
 
             public boolean matchesSafely(Move actual) {
                 return actual.target() == target
-                    && actual.origin() == origin;
+                        && actual.origin() == origin;
             }
 
             public void describeMismatchSafely(Move move, Description mismatchDescription) {
@@ -184,7 +341,6 @@ public class CheckersTest {
                         + " but got [" + move.origin() + "->" + move.target() + "]");
             }
         };
-
     }
 
-};
+}
