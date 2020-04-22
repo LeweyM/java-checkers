@@ -37,7 +37,7 @@ public class Checkers {
 
         if (piece == null) return Collections.emptyList();
 
-        List<Move> takingMoves = availableJumps(i);
+        List<Move> takingMoves = piece.getJumps();
         if (!takingMoves.isEmpty()) {
             return takingMoves;
         }
@@ -46,17 +46,18 @@ public class Checkers {
     }
 
     public List<Move> getAllLegalMoves() {
-        List<Move> takingMoves = playerTakingMoves();
+        List<Piece> pawns = getPlayerPieces();
+
+        List<Move> takingMoves = pawns.stream()
+                .map(Piece::getJumps)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
 
         if (takingMoves.size() > 0) {
             return takingMoves;
         }
 
-        List<Piece> pawns = getPlayerPieces();
-
-        return Stream.concat(
-                pawns.stream().map(Piece::getMoves),
-                getPlayerPieces().stream().map(Piece::getJumps))
+        return pawns.stream().map(Piece::getMoves)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
@@ -66,7 +67,10 @@ public class Checkers {
             changePiecePosition(origin, target);
             nextTurn();
 
-            List<Move> takingMoves = playerTakingMoves();
+            List<Move> takingMoves = getPlayerPieces().stream()
+                    .map(Piece::getJumps)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
 
             if (takingMoves.size() == 1) {
                 Move take = takingMoves.get(0);
@@ -102,20 +106,6 @@ public class Checkers {
 
     private boolean belongsToCurrentPlayer(int i) {
         return currentPlayer == Player.ONE ? getSquare(i) == 1 || getSquare(i) == 2 : getSquare(i) == -1 || getSquare(i) == -2;
-    }
-
-    private List<Move> playerTakingMoves() {
-        return getPlayerPieces().stream()
-                .map(Piece::getJumps)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-    }
-
-    private List<Move> availableJumps(int i) {
-        Piece piece = Piece.build(board, i, getSquare(i));
-        assert piece != null;
-
-        return piece.getJumps();
     }
 
     private void nextTurn() {
