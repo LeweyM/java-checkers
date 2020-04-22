@@ -273,6 +273,114 @@ public class CheckersTest {
         }
 
         @Nested
+        @DisplayName("takes")
+        class Takes {
+
+            @BeforeEach
+            void setUp() {
+                int[] startingState = buildState(
+                        row(1, 0, 0, 0),
+                        row(0, -1, 0, 0),
+                        row(0, 0, 0, 0)
+                );
+                checkers = new Checkers(startingState);
+                checkers.move(1, 10);
+            }
+
+            @Test
+            void should_take_if_legal_move() {
+                int[] expectedState = buildState(
+                        row(0, 0, 0, 0),
+                        row(0, 0, 0, 0),
+                        row(0, 1, 0, 0)
+                );
+                assertArrayEquals(checkers.stateSlice(), expectedState);
+            }
+
+            @Test
+            void should_end_current_players_turn() {
+                assertEquals(2, checkers.whoseTurn());
+            }
+
+
+            @Nested
+            @DisplayName("double jumps")
+            class DoubleJumps {
+                @BeforeEach
+                void setUp() {
+                    int[] b = buildState(
+                            row(1, 0, 0, 0),
+                            row(0, -1, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, -1, -1, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0)
+                    );
+                    checkers = new Checkers(b);
+                    checkers.move(1, 10);
+                }
+
+                @Test
+                void should_make_only_one_jump() {
+                    int[] expectedState = buildState(
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 1, 0, 0),
+                            row(0, -1, -1, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0)
+                    );
+                    assertArrayEquals(expectedState, checkers.stateSlice());
+                }
+
+                @Test
+                void should_remain_the_first_players_turn() {
+                    assertEquals(1, checkers.whoseTurn());
+                }
+            }
+
+            @Nested
+            @DisplayName("forced double jumps")
+            class ForcedDoubleJumps {
+
+                @BeforeEach
+                void setUp() {
+                    int[] b = buildState(
+                            row(1, 0, 0, 0),
+                            row(0, -1, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, -1, 0),
+                            row(-1, 0, 0, 0),
+                            row(0, 0, 0, -1),
+                            row(0, 0, 0, 0)
+                    );
+                    checkers = new Checkers(b);
+                    checkers.move(1, 10);
+                }
+
+                @Test
+                void should_make_forced_double_jumps() {
+                    int[] expectedState = buildState(
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(-1, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 1)
+                    );
+                    assertArrayEquals(expectedState, checkers.stateSlice());
+                }
+
+                @Test
+                void should_go_to_other_players_turn() {
+                    assertEquals(2, checkers.whoseTurn());
+                }
+
+            }
+        }
+
+        @Nested
         @DisplayName("taking pieces")
         class ForcedMoves {
 
@@ -285,18 +393,22 @@ public class CheckersTest {
                 @BeforeEach
                 void setUp() {
                     int[] b = buildState(
-                            row(1, 0, 0, 0),
                             row(0, 0, 0, 0),
-                            row(0, -1, 0, 0)
+                            row(0, 0, 0, 0),
+                            row(0, 1, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, -1, 0)
                     );
                     checkers = new Checkers(b);
-                    checkers.move(1, 6);
+                    checkers.move(10, 15);
                 }
 
                 @Test
                 void the_other_player_must_take() {
                     int[] expectedState = buildState(
-                            row(-1, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, -1, 0, 0),
                             row(0, 0, 0, 0),
                             row(0, 0, 0, 0)
                     );

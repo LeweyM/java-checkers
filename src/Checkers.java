@@ -63,19 +63,36 @@ public class Checkers {
     }
 
     public void move(int origin, int target) throws IllegalArgumentException {
+        Move move = new Move(origin, target);
+
         if (isLegalMove(origin, target)) {
-            changePiecePosition(origin, target);
+            switch (move.type()) {
+                case Move.NORMAL:
+                    changePiecePosition(origin, target);
+                    break;
+                case Move.JUMP:
+                    take(origin, target);
+                    Piece piece = Piece.build(board, target, getSquare(target));
+                    ArrayList<Move> jumps = piece.getJumps();
+
+                    while (jumps.size() == 1) {
+                        Move jump = jumps.get(0);
+                        take(jump.origin(), jump.target());
+                        piece = Piece.build(board, jump.target(), getSquare(jump.target()));
+                        jumps = piece.getJumps();
+                    }
+
+                    if (jumps.size() > 1) return;
+
+                    break;
+            }
+
             nextTurn();
 
-            List<Move> takingMoves = getPlayerPieces().stream()
-                    .map(Piece::getJumps)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
-
+            List<Move> takingMoves = getCurrentPlayerJumps();
             if (takingMoves.size() == 1) {
                 Move take = takingMoves.get(0);
-                take(take.origin(), take.target());
-                nextTurn();
+                move(take.origin(), take.target());
             }
 
         } else {
@@ -83,6 +100,16 @@ public class Checkers {
         }
     }
 
+    public int whoseTurn() {
+        return currentPlayer.value();
+    }
+
+    private List<Move> getCurrentPlayerJumps() {
+        return getPlayerPieces().stream()
+                .map(Piece::getJumps)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
 
     private void take(int origin, int target) {
         changePiecePosition(origin, target);
