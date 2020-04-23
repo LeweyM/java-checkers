@@ -15,6 +15,7 @@ public class Checkers {
 
     private int[] board;
     private Player currentPlayer = Player.ONE;
+    private int jumpChainingPiece;
 
     public Checkers(int[] b) {
         board = b;
@@ -36,6 +37,7 @@ public class Checkers {
         Piece piece = Piece.build(board, i, getSquare(i));
 
         if (piece == null) return Collections.emptyList();
+        if (jumpChainingPiece > 0 && jumpChainingPiece != i) return Collections.emptyList();
 
         List<Move> takingMoves = piece.getJumps();
         if (!takingMoves.isEmpty()) {
@@ -46,7 +48,9 @@ public class Checkers {
     }
 
     public List<Move> getAllLegalMoves() {
-        List<Piece> pawns = getPlayerPieces();
+        List<Piece> pawns = jumpChainingPiece > 0
+                ? Collections.singletonList(Piece.build(board, jumpChainingPiece, getSquare(jumpChainingPiece)))
+                : getPlayerPieces();
 
         List<Move> takingMoves = pawns.stream()
                 .map(Piece::getJumps)
@@ -76,8 +80,11 @@ public class Checkers {
                     Piece piece = Piece.build(board, target, getSquare(target));
                     ArrayList<Move> jumps = piece.getJumps();
 
+                    if (jumps.size() > 0) jumpChainingPiece = target;
+
                     while (jumps.size() == 1) {
                         Move jump = jumps.get(0);
+                        jumpChainingPiece = jump.target();
                         take(jump.origin(), jump.target());
                         piece = Piece.build(board, jump.target(), getSquare(jump.target()));
                         jumps = piece.getJumps();
@@ -85,6 +92,7 @@ public class Checkers {
 
                     if (jumps.size() > 1) return;
 
+                    jumpChainingPiece = -1;
                     break;
             }
 

@@ -301,13 +301,13 @@ public class CheckersTest {
 
 
             @Nested
-            @DisplayName("double jumps")
+            @DisplayName("double jumps with more than one taking option")
             class DoubleJumps {
                 @BeforeEach
                 void setUp() {
                     int[] b = buildState(
-                            row(1, 0, 0, 0),
-                            row(0, -1, 0, 0),
+                            row(1, 0, 0, 1),
+                            row(0, -1, 0, -1),
                             row(0, 0, 0, 0),
                             row(0, -1, -1, 0),
                             row(0, 0, 0, 0),
@@ -318,10 +318,10 @@ public class CheckersTest {
                 }
 
                 @Test
-                void should_make_only_one_jump() {
+                void should_make_only_the_first_jump() {
                     int[] expectedState = buildState(
-                            row(0, 0, 0, 0),
-                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 1),
+                            row(0, 0, 0, -1),
                             row(0, 1, 0, 0),
                             row(0, -1, -1, 0),
                             row(0, 0, 0, 0),
@@ -331,8 +331,22 @@ public class CheckersTest {
                 }
 
                 @Test
-                void should_remain_the_first_players_turn() {
+                void should_remain_the_jumping_players_turn() {
                     assertEquals(1, checkers.whoseTurn());
+                }
+
+                @Test
+                void only_legal_moves_available_after_jump_should_be_for_the_moved_piece() {
+                    List<Move> legalMoves = checkers.getAllLegalMoves();
+                    assertEquals(2, legalMoves.size());
+                    assertThat(legalMoves, hasItem(matchingMove(10, 17)));
+                    assertThat(legalMoves, hasItem(matchingMove(10, 19)));
+                }
+
+                @Test
+                void other_pieces_with_taking_options_cannot_be_moved_while_another_piece_is_chain_taking() {
+                    List<Move> legalMoves = checkers.getLegalMoves(4);
+                    assertEquals(0, legalMoves.size());
                 }
             }
 
