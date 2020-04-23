@@ -57,7 +57,8 @@ public class Checkers {
             return takingMoves;
         }
 
-        return pawns.stream().map(Piece::getMoves)
+        return pawns.stream()
+                .map(Piece::getMoves)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
@@ -131,17 +132,17 @@ public class Checkers {
         return playerPawnSquares;
     }
 
-    private boolean belongsToCurrentPlayer(int i) {
-        return currentPlayer == Player.ONE ? getSquare(i) == 1 || getSquare(i) == 2 : getSquare(i) == -1 || getSquare(i) == -2;
-    }
-
     private void nextTurn() {
         currentPlayer = currentPlayer.opponent();
     }
 
     private boolean isLegalMove(int origin, int target) {
-        return belongsToCurrentPlayer(origin) && getLegalMoves(origin)
-                .stream()
+        Piece piece = Piece.build(board, origin, getSquare(origin));
+        if (piece == null) return false;
+        return piece.belongsTo(currentPlayer) &&
+                Stream.concat(
+                        piece.getMoves().stream(),
+                        piece.getJumps().stream())
                 .anyMatch(move -> move.target() == target);
     }
 

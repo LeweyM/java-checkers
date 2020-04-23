@@ -113,7 +113,6 @@ public class CheckersTest {
             @Test
             void should_get_two_legal_moves_for_left_edge_piece() {
                 List<Move> legalMoves = checkers.getLegalMoves(1);
-
                 assertEquals(2, legalMoves.size());
                 assertThat(legalMoves, hasItem(matchingMove(1, 5)));
                 assertThat(legalMoves, hasItem(matchingMove(1, 6)));
@@ -122,7 +121,6 @@ public class CheckersTest {
             @Test
             public void should_get_one_legal_move_for_right_edge_piece() {
                 List<Move> legalMoves = checkers.getLegalMoves(4);
-
                 assertEquals(1, legalMoves.size());
                 assertThat(legalMoves, hasItem(matchingMove(4, 8)));
             }
@@ -215,7 +213,6 @@ public class CheckersTest {
                 assertThat(legalMoves, hasItem(matchingMove(2, 9)));
                 assertEquals(2, legalMoves.size());
             }
-
         }
     }
 
@@ -376,7 +373,6 @@ public class CheckersTest {
                 void should_go_to_other_players_turn() {
                     assertEquals(2, checkers.whoseTurn());
                 }
-
             }
         }
 
@@ -412,15 +408,12 @@ public class CheckersTest {
                             row(0, 0, 0, 0),
                             row(0, 0, 0, 0)
                     );
-
                     assertArrayEquals(expectedState, checkers.stateSlice());
                 }
 
                 @Test
                 void should_go_back_to_other_players_turn() {
-                    assertThrows(IllegalArgumentException.class, () -> {
-                        checkers.move(12, 16);
-                    });
+                    assertEquals(1, checkers.whoseTurn());
                 }
 
             }
