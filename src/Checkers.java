@@ -10,8 +10,6 @@ import java.util.stream.Stream;
 public class Checkers {
     public static final int EMPTY = 0;
     public static final int OUT_OF_BOUNDS = 3;
-    public static final int PLAYER_ONE_PAWN = 1;
-    public static final int PLAYER_TWO_PAWN = -1;
 
     private int[] board;
     private Player currentPlayer = Player.ONE;
@@ -34,88 +32,120 @@ public class Checkers {
     }
 
     public List<Move> getLegalMoves(int i) {
-        Piece piece = Piece.build(board, i, getSquare(i));
+        if (!squareHasPiece(i)) return Collections.emptyList();
 
-        if (piece == null) return Collections.emptyList();
-        if (jumpChainingPiece > 0 && jumpChainingPiece != i) return Collections.emptyList();
+        Piece piece = Piece.build(i, getSquare(i));
+        assert piece != null;
 
-        List<Move> takingMoves = piece.getJumps();
-        if (!takingMoves.isEmpty()) {
-            return takingMoves;
-        }
+        if (anotherPieceIsJumping(i)) return Collections.emptyList(); //have isJumping be part of piece - piece has to move with jump
 
-        return piece.getMoves();
+        return jumpsOrMoves(validMoves(piece));
+    }
+
+    private boolean squareHasPiece(int i) {
+        int val = getSquare(i);
+        return val <= 2 && val >= -2 && val != EMPTY;
+    }
+
+    private boolean anotherPieceIsJumping(int i) {
+        return jumpChainingPiece > 0 && jumpChainingPiece != i;
     }
 
     public List<Move> getAllLegalMoves() {
-        List<Piece> pawns = jumpChainingPiece > 0
-                ? Collections.singletonList(Piece.build(board, jumpChainingPiece, getSquare(jumpChainingPiece)))
+        List<Piece> pieces = jumpChainingPiece > 0
+                ? Collections.singletonList(Piece.build(jumpChainingPiece, getSquare(jumpChainingPiece)))
                 : getPlayerPieces();
 
-        List<Move> takingMoves = pawns.stream()
-                .map(Piece::getJumps)
+        List<Move> allMoves = pieces.stream()
+                .map(this::validMoves)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        if (takingMoves.size() > 0) {
-            return takingMoves;
-        }
-
-        return pawns.stream()
-                .map(Piece::getMoves)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+        return jumpsOrMoves(allMoves);
     }
 
-    public void move(int origin, int target) throws IllegalArgumentException {
-        Move move = new Move(origin, target);
-
-        if (isLegalMove(origin, target)) {
-            switch (move.type()) {
-                case Move.NORMAL:
-                    changePiecePosition(origin, target);
-                    break;
-                case Move.JUMP:
-                    take(origin, target);
-                    Piece piece = Piece.build(board, target, getSquare(target));
-                    ArrayList<Move> jumps = piece.getJumps();
-
-                    if (jumps.size() > 0) jumpChainingPiece = target;
-
-                    while (jumps.size() == 1) {
-                        Move jump = jumps.get(0);
-                        jumpChainingPiece = jump.target();
-                        take(jump.origin(), jump.target());
-                        piece = Piece.build(board, jump.target(), getSquare(jump.target()));
-                        jumps = piece.getJumps();
-                    }
-
-                    if (jumps.size() > 1) return;
-
-                    jumpChainingPiece = -1;
-                    break;
-            }
-
-            nextTurn();
-
-            List<Move> takingMoves = getCurrentPlayerJumps();
-            if (takingMoves.size() == 1) {
-                Move take = takingMoves.get(0);
-                move(take.origin(), take.target());
-            }
-
+    private List<Move> jumpsOrMoves(List<Move> moves) {
+        List<Move> jumps = moves.stream()
+                .filter(m -> m.type().equals(Move.JUMP))
+                .collect(Collectors.toList());
+        if (jumps.size() > 0) {
+            return jumps;
         } else {
-            throw new IllegalArgumentException("Illegal move: [" + origin + "->" + target + "]");
+            return moves;
         }
+    }
+
+    public void move(int origin, int target) {
+        Move move = makeMove(origin, target);
+
+        switch (move.type()) {
+            case Move.NORMAL:
+                changePiecePosition(origin, target);
+                break;
+            case Move.JUMP:
+                take(origin, target);
+                Piece piece = Piece.build(target, getSquare(target));
+                List<Move> jumps = getLegalJumps(piece);
+
+                if (jumps.size() > 0) jumpChainingPiece = target;
+
+                while (jumps.size() == 1) {
+                    Move jump = jumps.get(0);
+                    jumpChainingPiece = jump.target();
+                    take(jump.origin(), jump.target());
+                    piece.jump(jump.target());
+                    jumps = getLegalJumps(piece);
+                }
+
+                if (jumps.size() > 1) return;
+
+                jumpChainingPiece = -1;
+                break;
+        }
+
+        nextTurn();
+
+        List<Move> takingMoves = getCurrentPlayerJumps();
+        if (takingMoves.size() == 1) {
+            Move take = takingMoves.get(0);
+            move(take.origin(), take.target());
+        }
+    }
+
+    private Move makeMove(int origin, int target) {
+        if (!isLegalMove(origin, target)) throw new IllegalArgumentException("Illegal move: [" + origin + "->" + target + "]");
+        return new Move(origin, target, Math.abs(origin - target) < 6 ? Move.NORMAL : Move.JUMP);
     }
 
     public int whoseTurn() {
         return currentPlayer.value();
     }
 
+    private List<Move> validMoves(Piece piece) {
+        // better would be move.validate() ... maybe pass board as param
+        return piece.getPossibleMoves().stream()
+                .filter(m -> getSquare(m.target()) == EMPTY)
+                .filter(m -> {
+                    if (m.type() != Move.JUMP) return true;
+                    return isOpponentPiece(inbetweenIndex(m.origin(), m.target()));
+                }).collect(Collectors.toList());
+    }
+
+    private List<Move> getLegalJumps(Piece piece) {
+        return piece.getJumps().stream()
+                .filter(m -> getSquare(m.target()) == EMPTY)
+                .filter(m -> isOpponentPiece(inbetweenIndex(m.origin(), m.target())))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isOpponentPiece(int i) {
+        Piece piece = Piece.build(i, getSquare(i));
+        return piece != null && piece.belongsTo(currentPlayer.opponent());
+    }
+
     private List<Move> getCurrentPlayerJumps() {
         return getPlayerPieces().stream()
-                .map(Piece::getJumps)
+                .map(piece -> getLegalJumps(piece))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
@@ -132,7 +162,7 @@ public class Checkers {
     private List<Piece> getPlayerPieces() {
         List<Piece> playerPawnSquares = new ArrayList<>();
         for (int i = 0; i < board.length; i++) {
-            Piece piece = Piece.build(board, i, getSquare(i));
+            Piece piece = Piece.build(i, getSquare(i));
             if (piece != null && piece.belongsTo(currentPlayer)) {
                 playerPawnSquares.add(piece);
             }
@@ -145,12 +175,10 @@ public class Checkers {
     }
 
     private boolean isLegalMove(int origin, int target) {
-        Piece piece = Piece.build(board, origin, getSquare(origin));
+        Piece piece = Piece.build(origin, getSquare(origin));
         if (piece == null) return false;
         return piece.belongsTo(currentPlayer) &&
-                Stream.concat(
-                        piece.getMoves().stream(),
-                        piece.getJumps().stream())
+                piece.getPossibleMoves().stream()
                 .anyMatch(move -> move.target() == target);
     }
 

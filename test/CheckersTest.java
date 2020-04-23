@@ -181,7 +181,7 @@ public class CheckersTest {
 
             List<Move> moves = checkers.getAllLegalMoves();
 
-            assertEquals(moves.size(), 7);
+            assertEquals(7, moves.size());
             assertThat(moves, hasItem(matchingMove(21, 17)));
             assertThat(moves, hasItem(matchingMove(22, 17)));
             assertThat(moves, hasItem(matchingMove(22, 18)));
@@ -252,7 +252,7 @@ public class CheckersTest {
 
             checkers.move(1, 5);
 
-            assertArrayEquals(checkers.stateSlice(), expectedState);
+            assertArrayEquals(expectedState, checkers.stateSlice());
         }
 
         @Test
@@ -266,7 +266,7 @@ public class CheckersTest {
             checkers.move(1, 5);
             checkers.move(12, 8);
 
-            assertArrayEquals(checkers.stateSlice(), expectedState);
+            assertArrayEquals(expectedState, checkers.stateSlice());
         }
 
         @Nested

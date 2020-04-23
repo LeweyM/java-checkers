@@ -4,24 +4,26 @@ import java.util.List;
 public class Piece {
     private List<PieceAbility> abilities;
     private Player player;
+    private int location;
 
-    public static Piece build(int[] board, int location, int value) {
+    public static Piece build(int location, int value) {
         if (value == 1) {
-            Piece p = new Piece(Player.ONE);
-            p.setAbility(new CanGoDown(board, location, Player.ONE));
+            Piece p = new Piece(Player.ONE, location);
+            p.setAbility(new CanGoDown());
             return p;
         } else if (value == -1) {
-            Piece p = new Piece(Player.TWO);
-            p.setAbility(new CanGoUp(board, location, Player.TWO));
+            Piece p = new Piece(Player.TWO, location);
+            p.setAbility(new CanGoUp());
             return p;
         }
         return null;
     }
 
-    public ArrayList<Move> getMoves() {
+    public ArrayList<Move> getPossibleMoves() {
         ArrayList<Move> moves = new ArrayList<Move>() {};
         for (PieceAbility ability: abilities) {
-            moves.addAll(ability.getMoves());
+            moves.addAll(ability.getMoves(location));
+            moves.addAll(ability.getJumps(location));
         }
         return moves;
     }
@@ -29,7 +31,7 @@ public class Piece {
     public ArrayList<Move> getJumps() {
         ArrayList<Move> moves = new ArrayList<Move>() {};
         for (PieceAbility ability: abilities) {
-            moves.addAll(ability.getJumps());
+            moves.addAll(ability.getJumps(location));
         }
         return moves;
     }
@@ -38,13 +40,18 @@ public class Piece {
         return this.player == p;
     }
 
-    private Piece(Player player) {
+    private Piece(Player player, int location) {
         this.player = player;
+        this.location = location;
         abilities = new ArrayList<>();
     }
 
     private void setAbility(PieceAbility ability) {
         this.abilities.add(ability);
+    }
+
+    public void jump(int target) {
+        this.location = target;
     }
 
 }

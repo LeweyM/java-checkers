@@ -5,10 +5,19 @@ public class Move {
     private final int target;
     private final String type;
 
-    public Move(int origin, int target) {
+    public Move(int origin, int target, String type) {
         this.origin = origin;
         this.target = target;
-        this.type = Math.abs(origin - target) < 6 ? NORMAL : JUMP;
+        this.type = type;
+    }
+
+    @Override
+    public String toString() {
+        return "Move{" +
+                "origin=" + origin +
+                ", target=" + target +
+                ", type='" + type + '\'' +
+                '}';
     }
 
     public int origin() {
