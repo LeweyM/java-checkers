@@ -24,7 +24,7 @@ public class CheckersTest {
             int[] b = buildState(row(1, 0, 0, 0));
             Checkers checkers = new Checkers(b);
 
-            assertArrayEquals(checkers.stateSlice(), b);
+            testBoards(checkers.stateSlice(), b);
         }
     }
 
@@ -37,7 +37,7 @@ public class CheckersTest {
             Checkers checkers = new Checkers();
             checkers.setup();
 
-            assertArrayEquals(checkers.stateSlice(), getAfterSetupState());
+            testBoards(checkers.stateSlice(), getAfterSetupState());
         }
 
     }
@@ -252,7 +252,7 @@ public class CheckersTest {
 
             checkers.move(1, 5);
 
-            assertArrayEquals(expectedState, checkers.stateSlice());
+            testBoards(expectedState, checkers.stateSlice());
         }
 
         @Test
@@ -266,38 +266,44 @@ public class CheckersTest {
             checkers.move(1, 5);
             checkers.move(12, 8);
 
-            assertArrayEquals(expectedState, checkers.stateSlice());
+            testBoards(expectedState, checkers.stateSlice());
         }
 
         @Nested
         @DisplayName("takes")
         class Takes {
 
-            @BeforeEach
-            void setUp() {
-                int[] startingState = buildState(
-                        row(1, 0, 0, 0),
-                        row(0, -1, 0, 0),
-                        row(0, 0, 0, 0)
-                );
-                checkers = new Checkers(startingState);
-                checkers.move(1, 10);
+            @Nested
+            @DisplayName("legal taking moves")
+            class NormalTakes {
+                @BeforeEach
+                void setUp() {
+                    int[] startingState = buildState(
+                            row(1, 0, 0, 0),
+                            row(0, -1, 0, 0),
+                            row(0, 0, 0, 0)
+                    );
+                    checkers = new Checkers(startingState);
+                    checkers.move(1, 10);
+                }
+
+                @Test
+                void should_take_if_legal_move() {
+                    int[] expectedState = buildState(
+                            row(0, 0, 0, 0),
+                            row(0, 0, 0, 0),
+                            row(0, 1, 0, 0)
+                    );
+                    testBoards(checkers.stateSlice(), expectedState);
+                }
+
+                @Test
+                void should_end_current_players_turn() {
+                    assertEquals(2, checkers.whoseTurn());
+                }
+
             }
 
-            @Test
-            void should_take_if_legal_move() {
-                int[] expectedState = buildState(
-                        row(0, 0, 0, 0),
-                        row(0, 0, 0, 0),
-                        row(0, 1, 0, 0)
-                );
-                assertArrayEquals(checkers.stateSlice(), expectedState);
-            }
-
-            @Test
-            void should_end_current_players_turn() {
-                assertEquals(2, checkers.whoseTurn());
-            }
 
 
             @Nested
@@ -327,7 +333,7 @@ public class CheckersTest {
                             row(0, 0, 0, 0),
                             row(0, 0, 0, 0)
                     );
-                    assertArrayEquals(expectedState, checkers.stateSlice());
+                    testBoards(expectedState, checkers.stateSlice());
                 }
 
                 @Test
@@ -380,7 +386,9 @@ public class CheckersTest {
                             row(0, 0, 0, 0),
                             row(0, 0, 0, 1)
                     );
-                    assertArrayEquals(expectedState, checkers.stateSlice());
+                    int[] actualState = checkers.stateSlice();
+
+                    testBoards(actualState, expectedState);
                 }
 
                 @Test
@@ -422,7 +430,7 @@ public class CheckersTest {
                             row(0, 0, 0, 0),
                             row(0, 0, 0, 0)
                     );
-                    assertArrayEquals(expectedState, checkers.stateSlice());
+                    testBoards(expectedState, checkers.stateSlice());
                 }
 
                 @Test
@@ -430,6 +438,15 @@ public class CheckersTest {
                     assertEquals(1, checkers.whoseTurn());
                 }
 
+            }
+        }
+    }
+
+    private void testBoards(int[] actualState, int[] expectedState) {
+        for (int i = 0; i < expectedState.length; i++) {
+            if (expectedState[i] != actualState[i]) {
+                fail("Expected:\n" + new Checkers(expectedState).toString()
+                        + "Got:\n" + new Checkers(actualState).toString());
             }
         }
     }

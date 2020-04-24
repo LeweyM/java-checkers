@@ -32,7 +32,9 @@ public class CanGoUp implements PieceAbility {
     }
 
     private boolean canJumpUp(int origin, int destination) {
-        return row(origin) - 2 == row(destination);
+        return row(origin) - 2 == row(destination)
+                && row(destination) < 8
+                && row(destination) >= 0;
     }
 
     private Move leftUpMove(int i) {
