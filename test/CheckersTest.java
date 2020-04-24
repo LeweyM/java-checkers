@@ -445,8 +445,8 @@ public class CheckersTest {
     private void testBoards(int[] actualState, int[] expectedState) {
         for (int i = 0; i < expectedState.length; i++) {
             if (expectedState[i] != actualState[i]) {
-                fail("Expected:\n" + new Checkers(expectedState).toString()
-                        + "Got:\n" + new Checkers(actualState).toString());
+                fail("Expected:\n" + new Checkers(expectedState).prettyString()
+                        + "Got:\n" + new Checkers(actualState).prettyString());
             }
         }
     }

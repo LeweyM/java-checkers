@@ -1,12 +1,12 @@
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Pieces {
+public class Board {
     private Piece[] pieces;
-    private int chainJumpingPiece;
+    private int lastPieceThatJumped;
 
-    public Pieces(int[] state) {
-        chainJumpingPiece = -1;
+    public Board(int[] state) {
+        lastPieceThatJumped = -1;
         pieces = new Piece[33];
         for (int i = 1; i < state.length; i++) {
             int cell = state[i];
@@ -14,6 +14,19 @@ public class Pieces {
                 pieces[i] = Piece.build(i, cell);
             }
         }
+    }
+
+    public int[] stateArray() {
+        int[] state = new int[33];
+        state[0] = 3; //EOF
+        for (int i = 1; i < pieces.length; i++) {
+            if (pieces[i] == null) {
+                state[i] = 0;
+            } else {
+                state[i] = pieces[i].getCode();
+            }
+        }
+        return state;
     }
 
     public List<Piece> getPlayerPieces(Player player) {
@@ -29,24 +42,37 @@ public class Pieces {
 
     public void take(int origin, int target) {
         move(origin, target);
-        int victim = inbetweenIndex(origin, target);
-        pieces[victim] = null;
+        pieces[inbetweenIndex(origin, target)] = null;
         pieces[target].jump(target);
-        chainJumpingPiece = target;
+        lastPieceThatJumped = target;
+    }
+
+    public List<Move> getLegalJumps(Player player) {
+        if (lastPieceThatJumped > 0) {
+            return pieces[lastPieceThatJumped].getJumps().stream()
+                    .filter(this::isValidMove)
+                    .collect(Collectors.toList());
+        }
+
+        return getPlayerPieces(player).stream()
+                .map(Piece::getJumps)
+                .flatMap(Collection::stream)
+                .filter(this::isValidMove)
+                .collect(Collectors.toList());
     }
 
     public List<Move> getLegalMoves(Player player) {
-        if (chainJumpingPiece > 0) {
-            return pieces[chainJumpingPiece].getJumps().stream()
-                .filter(this::validateMove)
-                .collect(Collectors.toList());
+        if (lastPieceThatJumped > 0) {
+            return pieces[lastPieceThatJumped].getJumps().stream()
+                    .filter(this::isValidMove)
+                    .collect(Collectors.toList());
         }
 
         List<Move> moves = getPlayerPieces(player).stream()
-            .map(Piece::getPossibleMoves)
-            .flatMap(Collection::stream)
-            .filter(this::validateMove)
-            .collect(Collectors.toList());
+                .map(Piece::getPossibleMoves)
+                .flatMap(Collection::stream)
+                .filter(this::isValidMove)
+                .collect(Collectors.toList());
 
         return jumpsOrMoves(moves);
     }
@@ -61,12 +87,15 @@ public class Pieces {
                 .anyMatch(m -> target == m.target());
     }
 
-    public void finishChainJumping() {
-        chainJumpingPiece = -1;
+    public List<Move> jumpingPieceChainJumps() {
+        if (lastPieceThatJumped <= 0) return Collections.emptyList();
+
+        return pieces[lastPieceThatJumped].getJumps().stream()
+                .filter(this::isValidMove)
+                .collect(Collectors.toList());
     }
 
-
-    private boolean validateMove(Move move) {
+    private boolean isValidMove(Move move) {
         switch (move.type()) {
             case Move.NORMAL:
                 return isEmptySquare(move.target());

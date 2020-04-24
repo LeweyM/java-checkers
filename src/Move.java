@@ -5,10 +5,10 @@ public class Move {
     private final int target;
     private final String type;
 
-    public Move(int origin, int target, String type) {
+    public Move(int origin, int target) {
         this.origin = origin;
         this.target = target;
-        this.type = type;
+        this.type = Math.abs(origin - target) < 6 ? Move.NORMAL : Move.JUMP;
     }
 
     @Override
@@ -30,5 +30,9 @@ public class Move {
 
     public String type() {
         return type;
+    }
+
+    public boolean isJump() {
+        return type.equals(JUMP);
     }
 }

@@ -54,4 +54,13 @@ public class Piece {
         this.location = target;
     }
 
+    public int getCode() {
+        if (player == Player.ONE) {
+            return 1;
+        } else if (player == Player.TWO) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
 }

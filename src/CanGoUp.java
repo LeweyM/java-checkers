@@ -10,7 +10,6 @@ public class CanGoUp implements PieceAbility {
         if (leftUp != null) {
             moves.add(leftUp);
         }
-
         Move rightUp = rightUpMove(location);
         if (rightUp != null) {
             moves.add(rightUp);
@@ -22,11 +21,10 @@ public class CanGoUp implements PieceAbility {
     public List<Move> getJumps(int location) {
         List<Move> moves = new ArrayList<>();
         if (canJumpUp(location, upLeft(upLeft(location)))) {
-            moves.add(new Move(location, upLeft(upLeft(location)), Move.JUMP));
+            moves.add(new Move(location, upLeft(upLeft(location))));
         }
-
         if (canJumpUp(location, upRight(upRight(location)))) {
-            moves.add(new Move(location, upRight(upRight(location)), Move.JUMP));
+            moves.add(new Move(location, upRight(upRight(location))));
         }
         return moves;
     }
@@ -40,7 +38,7 @@ public class CanGoUp implements PieceAbility {
     private Move leftUpMove(int i) {
         int leftIndex = upLeft(i);
         if (row(i) - 1 == row(leftIndex)) {
-            return new Move(i, leftIndex, Move.NORMAL);
+            return new Move(i, leftIndex);
         }
         return null;
     }
@@ -48,7 +46,7 @@ public class CanGoUp implements PieceAbility {
     private Move rightUpMove(int i) {
         int rightIndex = upRight(i);
         if (row(i) - 1 == row(rightIndex)) {
-            return new Move(i, rightIndex, Move.NORMAL);
+            return new Move(i, rightIndex);
         }
         return null;
     }
