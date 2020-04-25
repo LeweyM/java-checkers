@@ -30,7 +30,7 @@ public class Checkers {
                 sb.append(" ");
             }
             if (i % 4 == 0) {
-                sb.append("| (" + (i-3) + "-" + i + ")\n");
+                sb.append("|  |" + (i-3) + " " + (i-2) + " " + (i-1) + " " + i + "|\n");
             }
         }
         return sb.toString();
@@ -72,8 +72,11 @@ public class Checkers {
                             board.take(jump.origin(), jump.target());
                             chainJumps = board.jumpingPieceChainJumps();
                     }
-                    if (chainJumps.size() > 1) return;
-                    break;
+                    if (chainJumps.size() > 1) {
+                        return;
+                    } else {
+                        break;
+                    }
             }
 
             nextTurn();
