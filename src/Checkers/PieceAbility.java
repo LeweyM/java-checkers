@@ -1,3 +1,5 @@
+package Checkers;
+
 import java.util.List;
 
 public interface PieceAbility {

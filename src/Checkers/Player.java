@@ -1,3 +1,5 @@
+package Checkers;
+
 public enum Player {
     ONE(1) {
         @Override

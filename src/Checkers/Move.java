@@ -1,3 +1,5 @@
+package Checkers;
+
 public class Move {
     public static final String NORMAL = "NORMAL";
     public static final String JUMP = "JUMP";
@@ -13,7 +15,7 @@ public class Move {
 
     @Override
     public String toString() {
-        return "Move{" +
+        return "Checkers.Move{" +
                 "origin=" + origin +
                 ", target=" + target +
                 ", type='" + type + '\'' +
