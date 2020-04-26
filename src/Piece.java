@@ -4,22 +4,21 @@ import java.util.List;
 public class Piece {
     private List<PieceAbility> abilities;
     private Player player;
-    private int location;
 
-    public static Piece build(int location, int value) {
+    public static Piece build(int value) {
         if (value == 1) {
-            Piece p = new Piece(Player.ONE, location);
+            Piece p = new Piece(Player.ONE);
             p.setAbility(new CanGoDown());
             return p;
         } else if (value == -1) {
-            Piece p = new Piece(Player.TWO, location);
+            Piece p = new Piece(Player.TWO);
             p.setAbility(new CanGoUp());
             return p;
         }
         return null;
     }
 
-    public ArrayList<Move> getPossibleMoves() {
+    public ArrayList<Move> getPossibleMoves(int location) {
         ArrayList<Move> moves = new ArrayList<Move>() {};
         for (PieceAbility ability: abilities) {
             moves.addAll(ability.getMoves(location));
@@ -28,7 +27,7 @@ public class Piece {
         return moves;
     }
 
-    public ArrayList<Move> getJumps() {
+    public ArrayList<Move> getJumps(int location) {
         ArrayList<Move> moves = new ArrayList<Move>() {};
         for (PieceAbility ability: abilities) {
             moves.addAll(ability.getJumps(location));
@@ -40,18 +39,13 @@ public class Piece {
         return this.player == p;
     }
 
-    private Piece(Player player, int location) {
+    private Piece(Player player) {
         this.player = player;
-        this.location = location;
         abilities = new ArrayList<>();
     }
 
     private void setAbility(PieceAbility ability) {
         this.abilities.add(ability);
-    }
-
-    public void move(int target) {
-        this.location = target;
     }
 
     public int getCode() {

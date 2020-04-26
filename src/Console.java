@@ -12,7 +12,7 @@ public class Console {
         getInput(br);
         checkers.setup();
 
-        while(true) {
+        while (true) {
             put(checkers.prettyString());
             List<Move> allLegalMoves = checkers.getAllLegalMoves();
             allLegalMoves.forEach(m -> put(m.origin() + " " + m.target()));
@@ -43,8 +43,7 @@ public class Console {
 
     private static String getInput(BufferedReader reader) {
         try {
-            String input = reader.readLine();
-            return input;
+            return reader.readLine();
         } catch (IOException e) {
             e.printStackTrace();
             return "";

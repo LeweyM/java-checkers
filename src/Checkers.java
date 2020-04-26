@@ -51,11 +51,11 @@ public class Checkers {
     }
 
     public List<Move> getLegalMoves(int i) {
-        if (chainJumpingPiece > 0 && i != chainJumpingPiece) {
-            return Collections.emptyList();
-        }
+        if (aPieceIsChainJumping()) {
+            if (i != chainJumpingPiece) {
+                return Collections.emptyList();
+            }
 
-        if (chainJumpingPiece > 0 && i == chainJumpingPiece) {
             return board.getLegalJumps(currentPlayer).stream()
                     .filter(m -> m.origin() == chainJumpingPiece)
                     .collect(Collectors.toList());
@@ -67,7 +67,7 @@ public class Checkers {
     }
 
     public List<Move> getAllLegalMoves() {
-        if (chainJumpingPiece > 0) {
+        if (aPieceIsChainJumping()) {
             return board.getLegalMoves(currentPlayer).stream()
                     .filter(m -> m.origin() == chainJumpingPiece)
                     .collect(Collectors.toList());
@@ -100,7 +100,6 @@ public class Checkers {
                     }
             }
 
-            endChainJump();
             nextTurn();
 
             List<Move> takingMoves = board.getLegalJumps(currentPlayer);
@@ -111,6 +110,10 @@ public class Checkers {
         } else {
             throw new IllegalArgumentException("Illegal move: [" + origin + "->" + target + "]");
         }
+    }
+
+    private boolean aPieceIsChainJumping() {
+        return chainJumpingPiece > 0;
     }
 
     private void endChainJump() {
@@ -137,6 +140,7 @@ public class Checkers {
     }
 
     private void nextTurn() {
+        endChainJump();
         currentPlayer = currentPlayer.opponent();
     }
 

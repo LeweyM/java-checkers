@@ -1,5 +1,8 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Board {
     private Piece[] pieces;
@@ -9,7 +12,7 @@ public class Board {
         for (int i = 1; i < state.length; i++) {
             int cell = state[i];
             if (cell != 0) {
-                pieces[i] = Piece.build(i, cell);
+                pieces[i] = Piece.build(cell);
             }
         }
     }
@@ -27,35 +30,27 @@ public class Board {
         return state;
     }
 
-    public List<Piece> getPlayerPieces(Player player) {
-        return getAllPieces().stream()
-                .filter(p -> p.belongsTo(player))
-                .collect(Collectors.toList());
+    public void take(int origin, int target) {
+        move(origin, target);
+        pieces[inbetweenIndex(origin, target)] = null;
     }
 
     public void move(int origin, int target) {
         pieces[target] = pieces[origin];
         pieces[origin] = null;
-        pieces[target].move(target);
-    }
-
-    public void take(int origin, int target) {
-        move(origin, target);
-        pieces[inbetweenIndex(origin, target)] = null;
-        pieces[target].move(target);
     }
 
     public List<Move> getLegalJumps(Player player) {
-        return getPlayerPieces(player).stream()
-                .map(Piece::getJumps)
+        return playerPieceLocationsStream(player)
+                .mapToObj(this::getJumps)
                 .flatMap(Collection::stream)
                 .filter(this::isValidMove)
                 .collect(Collectors.toList());
     }
 
     public List<Move> getLegalMoves(Player player) {
-        List<Move> moves = getPlayerPieces(player).stream()
-                .map(Piece::getPossibleMoves)
+        List<Move> moves = playerPieceLocationsStream(player)
+                .mapToObj(this::getMoves)
                 .flatMap(Collection::stream)
                 .filter(this::isValidMove)
                 .collect(Collectors.toList());
@@ -69,8 +64,22 @@ public class Board {
                 && pieces[origin] != null
                 && pieces[origin].belongsTo(player);
 
-        return playerPiece && pieces[origin].getPossibleMoves().stream()
+        return playerPiece && getMoves(origin).stream()
                 .anyMatch(m -> target == m.target());
+    }
+
+    private ArrayList<Move> getJumps(int location) {
+        return pieces[location].getJumps(location);
+    }
+
+    private ArrayList<Move> getMoves(int location) {
+        return pieces[location].getPossibleMoves(location);
+    }
+
+    private IntStream playerPieceLocationsStream(Player player) {
+        return IntStream.range(1, 32)
+                .filter(loc -> pieces[loc] != null)
+                .filter(loc -> pieces[loc].belongsTo(player));
     }
 
     private boolean isValidMove(Move move) {
@@ -108,12 +117,6 @@ public class Board {
         } else {
             return moves;
         }
-    }
-
-    private List<Piece> getAllPieces() {
-        return Arrays.stream(pieces)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
     }
 
     private int inbetweenIndex(int i1, int i2) {
