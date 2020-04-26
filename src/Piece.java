@@ -50,7 +50,7 @@ public class Piece {
         this.abilities.add(ability);
     }
 
-    public void jump(int target) {
+    public void move(int target) {
         this.location = target;
     }
 

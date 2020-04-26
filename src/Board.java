@@ -3,10 +3,8 @@ import java.util.stream.Collectors;
 
 public class Board {
     private Piece[] pieces;
-    private int lastPieceThatJumped;
 
     public Board(int[] state) {
-        lastPieceThatJumped = -1;
         pieces = new Piece[33];
         for (int i = 1; i < state.length; i++) {
             int cell = state[i];
@@ -38,22 +36,16 @@ public class Board {
     public void move(int origin, int target) {
         pieces[target] = pieces[origin];
         pieces[origin] = null;
+        pieces[target].move(target);
     }
 
     public void take(int origin, int target) {
         move(origin, target);
         pieces[inbetweenIndex(origin, target)] = null;
-        pieces[target].jump(target);
-        lastPieceThatJumped = target;
+        pieces[target].move(target);
     }
 
     public List<Move> getLegalJumps(Player player) {
-        if (lastPieceThatJumped > 0) {
-            return pieces[lastPieceThatJumped].getJumps().stream()
-                    .filter(this::isValidMove)
-                    .collect(Collectors.toList());
-        }
-
         return getPlayerPieces(player).stream()
                 .map(Piece::getJumps)
                 .flatMap(Collection::stream)
@@ -62,12 +54,6 @@ public class Board {
     }
 
     public List<Move> getLegalMoves(Player player) {
-        if (lastPieceThatJumped > 0) {
-            return pieces[lastPieceThatJumped].getJumps().stream()
-                    .filter(this::isValidMove)
-                    .collect(Collectors.toList());
-        }
-
         List<Move> moves = getPlayerPieces(player).stream()
                 .map(Piece::getPossibleMoves)
                 .flatMap(Collection::stream)
@@ -87,15 +73,9 @@ public class Board {
                 .anyMatch(m -> target == m.target());
     }
 
-    public List<Move> jumpingPieceChainJumps() {
-        if (lastPieceThatJumped <= 0) return Collections.emptyList();
-
-        return pieces[lastPieceThatJumped].getJumps().stream()
-                .filter(this::isValidMove)
-                .collect(Collectors.toList());
-    }
-
     private boolean isValidMove(Move move) {
+        if (move.target() > 32 || move.target() < 1) return false;
+
         switch (move.type()) {
             case Move.NORMAL:
                 return isEmptySquare(move.target());

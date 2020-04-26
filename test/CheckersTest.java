@@ -442,6 +442,33 @@ public class CheckersTest {
         }
     }
 
+    @Nested
+    @DisplayName("Complete Game")
+    class CompleteGame {
+
+        @Test
+        public void should_be_playable() {
+            Checkers checkers = new Checkers();
+            checkers.setup();
+            checkers.move(9, 13);
+            checkers.move(21, 17);
+            checkers.move(5, 9);
+
+            int[] expectedState = buildState(
+                    row(1, 1, 1, 1),
+                    row(0, 1, 1, 1),
+                    row(1, 1, 1, 1),
+                    row(1, 0, 0, 0),
+                    row(-1, 0, 0, 0),
+                    row(0, -1, -1, -1),
+                    row(-1, -1, -1, -1),
+                    row(-1, -1, -1, -1)
+            );
+            testBoards(checkers.stateSlice(), expectedState);
+        }
+
+    }
+
     private void testBoards(int[] actualState, int[] expectedState) {
         for (int i = 0; i < expectedState.length; i++) {
             if (expectedState[i] != actualState[i]) {
