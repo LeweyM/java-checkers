@@ -2,19 +2,20 @@ package UI;
 
 import Checkers.Checkers;
 import Checkers.Move;
+import Checkers.Subscriber;
 import processing.core.PApplet;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MySketch extends PApplet {
+public class MySketch extends PApplet implements Subscriber {
 
-    private static final int SIZE = 500;
-    private static final int SQUARE_SIZE = SIZE / 8;
+    static final int SIZE = 500;
+    static final int SQUARE_SIZE = SIZE / 8;
     private Checkers checkers;
-    private static final float HALF_SQUARE = SQUARE_SIZE / 2f;
     private int selectedCell;
     private List<Integer> highlightedSquares;
+    private List<CheckerPiece> pieces;
 
     public static void main(String[] args) {
         String[] processingArgs = {"MySketch"};
@@ -25,11 +26,30 @@ public class MySketch extends PApplet {
     public void settings() {
         size(SIZE, SIZE);
     }
+
     public void setup() {
         checkers = new Checkers();
         checkers.setup();
         highlightedSquares = new ArrayList<>();
         selectedCell = -1;
+        checkers.subscribeToMoveStream(this);
+        buildPiecesFromState();
+    }
+
+    private void buildPiecesFromState() {
+        pieces = new ArrayList<>();
+        int[] stateSlice = checkers.stateSlice();
+        for (int i = 0; i < stateSlice.length; i++) {
+            int pieceType = stateSlice[i];
+            switch (pieceType) {
+                case 1:
+                    pieces.add(new BluePawn(this, i));
+                    break;
+                case -1:
+                    pieces.add(new RedPawn(this, i));
+                    break;
+            }
+        }
     }
 
     public void draw() {
@@ -42,7 +62,7 @@ public class MySketch extends PApplet {
     public void mouseClicked() {
         int y = mouseY / SQUARE_SIZE;
         int x = mouseX / (SQUARE_SIZE);
-        int index = boardCoordsToCheckersIndex(y, x);
+        int index = boardCoordsToCheckersIndex(x, y);
         if (index > 0) {
             if (isSelected(index)) {
                 unselectCell();
@@ -54,6 +74,12 @@ public class MySketch extends PApplet {
             }
         }
 
+    }
+
+    @Override
+    public void nextMove(Move move) {
+        System.out.println(move);
+        buildPiecesFromState();
     }
 
     private boolean isSelected(int index) {
@@ -84,30 +110,7 @@ public class MySketch extends PApplet {
     }
 
     private void drawPieces() {
-        int[] state = checkers.stateSlice();
-
-        for (int y = 0; y < 8; y++) {
-            for (int x = 0; x < 8; x++) {
-                int i = boardCoordsToCheckersIndex(y, x);
-                if (i > 0) {
-                    if (state[i] == 1) {
-                        fill(200, 0, 0);
-                        drawChecker(y, x);
-                    } else if (state[i] == -1) {
-                        fill(0,0,200);
-                        drawChecker(y, x);
-                    }
-                }
-            }
-        }
-    }
-
-    private void drawChecker(float y, float x) {
-        ellipse(
-                x * SQUARE_SIZE + HALF_SQUARE,
-                y * SQUARE_SIZE + HALF_SQUARE,
-                SQUARE_SIZE * 0.8f,
-                SQUARE_SIZE * 0.8f);
+        pieces.forEach(CheckerPiece::draw);
     }
 
     private void drawBoard() {
@@ -126,17 +129,17 @@ public class MySketch extends PApplet {
                         fill(0);
                     }
                 }
-                if (squareIsHighlighted(y, x)) fill(100,0,0);
+                if (squareIsHighlighted(x, y)) fill(100,0,0);
                 rect(x * SQUARE_SIZE, y * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE);
             }
         }
     }
 
-    private boolean squareIsHighlighted(int y, int x) {
-        return highlightedSquares.stream().anyMatch(i -> boardCoordsToCheckersIndex(y, x) == i);
+    private boolean squareIsHighlighted(int x, int y) {
+        return highlightedSquares.stream().anyMatch(i -> boardCoordsToCheckersIndex(x, y) == i);
     }
 
-    private int boardCoordsToCheckersIndex(int y, int x) {
+    private int boardCoordsToCheckersIndex(int x, int y) {
         int index = (y*8) + x;
         if (isEven(y)) {
             if (isEven(index)) return -1;
@@ -150,5 +153,4 @@ public class MySketch extends PApplet {
     private boolean isEven(int i) {
         return i % 2 == 0;
     }
-
 }

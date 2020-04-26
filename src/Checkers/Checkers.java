@@ -1,5 +1,8 @@
 package Checkers;
 
+import com.sun.deploy.net.MessageHeader;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,13 +14,20 @@ public class Checkers {
     private Player currentPlayer = Player.ONE;
     private Board board;
     private int chainJumpingPiece;
+    private List<Subscriber> subscribers;
 
     public Checkers(int[] b) {
         board = new Board(b);
         chainJumpingPiece = -1;
+        subscribers = new ArrayList<>();
     }
 
     public Checkers() {
+        subscribers = new ArrayList<>();
+    }
+
+    public void subscribeToMoveStream(Subscriber subscriber) {
+        subscribers.add(subscriber);
     }
 
     public String prettyString() {
@@ -35,7 +45,7 @@ public class Checkers {
                 sb.append(" ");
             }
             if (i % 4 == 0) {
-                sb.append("|  |" + (i-3) + " " + (i-2) + " " + (i-1) + " " + i + "|\n");
+                sb.append("|  |" + (i - 3) + " " + (i - 2) + " " + (i - 1) + " " + i + "|\n");
             }
         }
         return sb.toString();
@@ -84,16 +94,19 @@ public class Checkers {
             switch (move.type()) {
                 case Move.NORMAL:
                     board.move(origin, target);
+                    publishMove(move);
                     break;
                 case Move.JUMP:
                     board.take(origin, target);
+                    publishMove(move);
                     setChainJumpingPiece(target);
                     List<Move> chainJumps = getLegalMoves(chainJumpingPiece);
                     while (chainJumps.size() == 1) {
-                            Move jump = chainJumps.get(0);
-                            board.take(jump.origin(), jump.target());
-                            setChainJumpingPiece(jump.target());
-                            chainJumps = getLegalMoves(chainJumpingPiece);
+                        Move jump = chainJumps.get(0);
+                        board.take(jump.origin(), jump.target());
+                        publishMove(move);
+                        setChainJumpingPiece(jump.target());
+                        chainJumps = getLegalMoves(chainJumpingPiece);
                     }
                     if (chainJumps.size() > 1) {
                         return;
@@ -111,6 +124,12 @@ public class Checkers {
             }
         } else {
             throw new IllegalArgumentException("Illegal move: [" + origin + "->" + target + "]");
+        }
+    }
+
+    private void publishMove(Move move) {
+        for (Subscriber sub : subscribers) {
+            sub.nextMove(move);
         }
     }
 
@@ -132,12 +151,18 @@ public class Checkers {
 
     private String pieceString(int[] board, int i) {
         switch (board[i]) {
-            case 1: return "o";
-            case 2: return "O";
-            case -1: return "x";
-            case -2: return "X";
-            case 0: return "_";
-            default: return "";
+            case 1:
+                return "o";
+            case 2:
+                return "O";
+            case -1:
+                return "x";
+            case -2:
+                return "X";
+            case 0:
+                return "_";
+            default:
+                return "";
         }
     }
 
