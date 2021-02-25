@@ -1,45 +1,97 @@
 package UI;
 
+import Checkers.Move;
 import processing.core.PApplet;
 
 public class CheckerPiece {
-        private static final int SQUARE_SIZE = MySketch.SQUARE_SIZE;
-        private static final int HALF_SQUARE = SQUARE_SIZE / 2;
-        private final PApplet s;
-        private final int location;
+    private static final int SQUARE_SIZE = MySketch.SQUARE_SIZE;
+    private static final int HALF_SQUARE = SQUARE_SIZE / 2;
+    private static final int ANIMATION_STEP_COUNT = 20;
+    private final PApplet s;
+    private int location;
+    private int animationCounter;
+    private boolean isAnimating;
+    private TransitionSubscriber subscriber;
+    private boolean isDead;
+    private int preLocation;
 
-        public CheckerPiece(PApplet s, int location) {
-            this.s = s;
-            this.location = location;
-        }
+    public CheckerPiece(PApplet s, TransitionSubscriber subscriber, int location) {
+        this.s = s;
+        this.subscriber = subscriber;
+        this.location = location;
+        this.isDead = false;
+    }
 
-        public void draw() {
-            drawChecker();
-        }
+    public int getLocation() {
+        return location;
+    }
 
-        private void drawChecker() {
-            s.ellipse(
-                    xOnBoardGrid() * SQUARE_SIZE + HALF_SQUARE,
-                    yOnBoardGrid() * SQUARE_SIZE + HALF_SQUARE,
-                    SQUARE_SIZE * 0.8f,
-                    SQUARE_SIZE * 0.8f);
-        }
+    public void draw() {
+        if (isAnimating) updateAnimation();
+        if (!isDead) drawChecker();
+    }
 
-        private int yOnBoardGrid() {
-            return row();
+    private void updateAnimation() {
+        if (animationCounter == 0) {
+            endAnimation();
+            return;
         }
+        animationCounter--;
+    }
 
-        private int xOnBoardGrid() {
-            return isEvenRow()
-                    ? ((location-1) % 4) * 2 +1
-                    : ((location-1) % 4) * 2;
-        }
+    private void endAnimation() {
+        isAnimating = false;
+        subscriber.transitionEnded();
+    }
 
-        private boolean isEvenRow() {
-            return row() % 2 == 0;
-        }
+    private void drawChecker() {
+        float xDiff = xPosition(preLocation) - xPosition(location);
+        float yDiff = yPosition(preLocation) - yPosition(location);
 
-        private int row() {
-            return Math.floorDiv(location - 1, 4);
-        }
+        float xOffset = xDiff / ANIMATION_STEP_COUNT * (animationCounter);
+        float yOffset = yDiff / ANIMATION_STEP_COUNT * (animationCounter);
+
+        s.ellipse(
+                xPosition(location) + xOffset,
+                yPosition(location) + yOffset,
+                SQUARE_SIZE * 0.8f,
+                SQUARE_SIZE * 0.8f);
+    }
+
+    private int xPosition(int i) {
+        return xOnBoardGrid(i) * SQUARE_SIZE + HALF_SQUARE;
+    }
+
+    private int yPosition(int i) {
+        return yOnBoardGrid(i) * SQUARE_SIZE + HALF_SQUARE;
+    }
+
+    private int yOnBoardGrid(int i) {
+        return row(i);
+    }
+
+    private int xOnBoardGrid(int i) {
+        return isEvenRow(i)
+                ? ((i-1) % 4) * 2 +1
+                : ((i-1) % 4) * 2;
+    }
+
+    private boolean isEvenRow(int i) {
+        return row(i) % 2 == 0;
+    }
+
+    private int row(int i) {
+        return Math.floorDiv(i - 1, 4);
+    }
+
+    public void translate(Move move) {
+        isAnimating = true;
+        animationCounter = ANIMATION_STEP_COUNT;
+        preLocation = location;
+        location = move.target();
+    }
+
+    public void remove() {
+        isDead = true;
+    }
 }

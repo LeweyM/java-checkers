@@ -1,7 +1,5 @@
 package Checkers;
 
-import com.sun.deploy.net.MessageHeader;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
